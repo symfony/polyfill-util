@@ -129,6 +129,13 @@ EOPHP
                         'array|string|null $string' => 'array|string $string',
                         'array|string|null $from_encoding = null' => 'array|string|null $from_encoding = null',
                         'array|string|null $from_encoding' => 'array|string $from_encoding',
+                        'string $characters = null' => '?string $characters = null',
+                        'string $charset = null' => '?string $charset = null',
+                        'string $encoding = null' => '?string $encoding = null',
+                        'string $language = null' => '?string $language = null',
+                        'string $transfer_encoding = null' => '?string $transfer_encoding = null',
+                        'string $type = null' => '?string $type = null',
+                        'int $length = null' => '?int $length = null',
                     ];
 
                     if (strtr($polyfillSignature, $map) !== $originalSignature) {
