@@ -20,13 +20,11 @@ use PHPUnit\Framework\WarningTestCase;
 
 class TestListenerForV9 extends TestSuite implements TestListenerInterface
 {
-    private $suite;
     private $trait;
 
     public function __construct(?TestSuite $suite = null)
     {
         if ($suite) {
-            $this->suite = $suite;
             $this->setName($suite->getName().' with polyfills enabled');
             $this->addTest($suite);
         }
@@ -35,7 +33,13 @@ class TestListenerForV9 extends TestSuite implements TestListenerInterface
 
     public function startTestSuite(TestSuite $suite): void
     {
-        $this->trait->startTestSuite($suite->tests()[0]);
+        if (null === TestListenerTrait::$enabledPolyfills) {
+            TestListenerTrait::$enabledPolyfills = false;
+            $this->trait->startTestSuite($suite);
+        }
+        if ($suite instanceof TestListener) {
+            TestListenerTrait::$enabledPolyfills = $suite->getName();
+        }
     }
 
     public function addError(Test $test, \Throwable $t, float $time): void
@@ -69,6 +73,7 @@ class TestListenerForV9 extends TestSuite implements TestListenerInterface
 
     public function endTestSuite(TestSuite $suite): void
     {
+        TestListenerTrait::$enabledPolyfills = false;
     }
 
     public function startTest(Test $test): void
@@ -82,15 +87,5 @@ class TestListenerForV9 extends TestSuite implements TestListenerInterface
     public static function warning($message): WarningTestCase
     {
         return new WarningTestCase($message);
-    }
-
-    protected function setUp(): void
-    {
-        TestListenerTrait::$enabledPolyfills = $this->suite->getName();
-    }
-
-    protected function tearDown(): void
-    {
-        TestListenerTrait::$enabledPolyfills = false;
     }
 }

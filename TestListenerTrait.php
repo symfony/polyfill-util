@@ -25,10 +25,6 @@ class TestListenerTrait
 
     public function startTestSuite($mainSuite)
     {
-        if (null !== self::$enabledPolyfills) {
-            return;
-        }
-        self::$enabledPolyfills = false;
         $warnings = [];
 
         foreach ($mainSuite->tests() as $suite) {
@@ -109,7 +105,7 @@ use {$testedClass->getNamespaceName()} as p;
 
 function {$f['name']}{$f['signature']}
 {
-    if ('{$testClass}' === TestListenerTrait::\$enabledPolyfills) {
+    if ('{$testClass} with polyfills enabled' === TestListenerTrait::\$enabledPolyfills) {
         {$f['return']}{$f['args']};
     }
 
@@ -123,6 +119,16 @@ EOPHP
                     $polyfillSignature = ReflectionCaster::castFunctionAbstract(new \ReflectionFunction($testNamespace.'\\'.$f['name']), [], new Stub(), true);
                     $polyfillSignature = ReflectionCaster::getSignature($polyfillSignature);
 
+                    if ('mb_get_info' === $r->name && false === strpos($originalSignature, '|null') && false !== strpos($polyfillSignature, '|null')) {
+                        // Added to PHP 8.2.14/8.3.1
+                        $originalSignature .= '|null';
+                    }
+
+                    if (false === strpos($bootstrap->getPath(), '80.php')) {
+                        // mixed return type cannot be used before PHP 8
+                        $originalSignature = str_replace(': mixed', '', $originalSignature);
+                    }
+
                     $map = [
                         '?' => '',
                         'IDNA_DEFAULT' => \PHP_VERSION_ID >= 80100 ? 'IDNA_DEFAULT' : '0',
@@ -131,7 +137,7 @@ EOPHP
                         'array|string|null $from_encoding' => 'array|string $from_encoding',
                     ];
 
-                    if (strtr($polyfillSignature, $map) !== $originalSignature) {
+                    if (strtr($polyfillSignature, $map) !== str_replace('?', '', $originalSignature)) {
                         $warnings[] = TestListener::warning("Incompatible signature for PHP >= 8:\n- {$f['name']}$originalSignature\n+ {$f['name']}$polyfillSignature");
                     }
                 }
